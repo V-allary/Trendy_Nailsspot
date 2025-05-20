@@ -56,3 +56,69 @@ app.post('/submit-form', async (req, res) => {
       res.status(500).send("Error saving booking. Please try again.");
     }
   });
+  const express = require('express');
+const bodyParser = require('body-parser');
+const nodemailer = require('nodemailer');
+const cors = require('cors');
+const app = express();
+
+// Middlewares
+app.use(cors());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+// Approved techs from Trendy Nail's Spot
+const allowedTechs = [
+  "iannail's",
+  "Nailed by Mash",
+  "nails by mashen",
+  "Ricky claws",
+  "Kev Nails",
+  "Nail'sramoes",
+  "Nails aite"
+];
+
+// Route to receive bookings
+app.post('/book', (req, res) => {
+  const { name, email, message, nailtech, time } = req.body;
+
+  if (!allowedTechs.includes(nailtech)) {
+    return res.status(403).send('Booking not allowed for this nail tech.');
+  }
+
+  // Email config
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'trendynailsspot@gmail.com',
+      pass: 'your-app-password-here' // use App Password, not Gmail password
+    }
+  });
+
+  const mailOptions = {
+    from: email,
+    to: 'vallarymitchelle4@gmail.com',
+    subject: `New Booking from ${name}`,
+    text: `
+      Name: ${name}
+      Email: ${email}
+      Time: ${time}
+      Nail Tech: ${nailtech}
+      Message: ${message}
+    `
+  };
+
+  transporter.sendMail(mailOptions, (err, info) => {
+    if (err) {
+      console.error('Error sending email:', err);
+      return res.status(500).send('Failed to send booking.');
+    }
+    res.send('Booking successfully sent!');
+  });
+});
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
